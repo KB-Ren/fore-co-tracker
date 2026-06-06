@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fore & Co. — Project Tracker v1.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Fore & Co. brand palette */
+  --earth:#1B3A2D;      /* Forest — primary background */
+  --sand:#C9A84C;       /* Antique Gold — primary accent */
+  --bone:#F5F0E8;       /* Cream — primary text */
+  --hazard:#14301F;     /* Deep forest — card/panel bg */
+  --green:#1A5C38;      /* Mid forest */
+  --green-lt:#8FB49A;   /* Fairway — success/done */
+  --amber:#C9A84C;      /* Gold doubles as amber */
+  --red:#8B2E2E;
+  --dim:#8FAB96;        /* Muted fairway */
+  --card:#163326;       /* Card surface */
+  --line:rgba(201,168,76,0.15);
+  --blue:#3A5A8C; --purple:#6A4A8C;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--earth);color:var(--bone);min-height:100vh;padding-bottom:80px;}
+
+/* ── HEADER ── */
+header{padding:28px 40px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.hd-title h1{font-family:'Inter',sans-serif;font-size:30px;letter-spacing:0.08em;line-height:1;font-weight:700;text-transform:uppercase;}
+.hd-title h1 .amp{color:var(--sand);font-style:italic;font-family:'Playfair Display',serif;font-weight:400;letter-spacing:0;text-transform:none;font-size:34px;vertical-align:-2px;}
+.hd-title h1 .co{color:var(--sand);}
+.hd-title p{font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-top:4px;font-family:'Inter',sans-serif;}
+.hd-stats{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.stat-box{text-align:center;min-width:52px;}
+.stat-box .v{font-family:'DM Mono',monospace;font-size:26px;line-height:1;}
+.stat-box .l{font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-top:2px;font-family:'Inter',sans-serif;}
+.stat-box.s-done .v{color:var(--green-lt);}
+.stat-box.s-prog .v{color:var(--sand);}
+.stat-box.s-todo .v{color:var(--dim);}
+.stat-box.s-block .v{color:#c84444;}
+.vsep{width:1px;height:36px;background:var(--line);}
+.deadline-box{background:rgba(20,48,31,0.9);border:1px solid var(--sand);border-radius:8px;padding:8px 14px;text-align:center;}
+.deadline-box .dl{font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--sand);font-family:'Inter',sans-serif;}
+.deadline-box .dv{font-family:'Playfair Display',serif;font-size:17px;color:var(--bone);margin-top:1px;font-style:italic;}
+.deadline-box .dd{font-family:'DM Mono',monospace;font-size:11px;color:var(--sand);margin-top:2px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;padding:0 40px;border-bottom:1px solid var(--line);margin-top:4px;}
+.tab-btn{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:14px 20px;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{color:var(--bone);}
+.tab-btn.active{color:var(--sand);border-bottom-color:var(--sand);}
+
+/* ── PROGRESS ── */
+.prog-bar-wrap{padding:16px 40px 0;}
+.prog-bar-labels{display:flex;justify-content:space-between;font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.prog-bar-track{height:5px;background:var(--card);border-radius:3px;border:1px solid var(--line);}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--green-lt),var(--sand));border-radius:3px;transition:width .5s ease;}
+
+/* ── VIEWS ── */
+.view{display:none;padding:24px 40px;}
+.view.active{display:block;}
+
+/* ── FOCUS VIEW ── */
+.focus-header{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.focus-section{margin-bottom:28px;}
+.focus-section-title{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:6px 14px;border-radius:6px;margin-bottom:10px;display:inline-block;}
+.focus-now .focus-section-title{background:rgba(139,46,46,0.2);color:#e07777;border:1px solid rgba(139,46,46,0.3);}
+.focus-week .focus-section-title{background:rgba(201,168,76,0.12);color:var(--sand);border:1px solid rgba(201,168,76,0.3);}
+.focus-next .focus-section-title{background:rgba(143,180,154,0.1);color:var(--green-lt);border:1px solid rgba(143,180,154,0.25);}
+.focus-task{border:1px solid var(--line);border-radius:10px;background:var(--card);margin-bottom:8px;transition:border-color .15s;}
+.focus-task:hover{border-color:rgba(201,168,76,0.35);}
+.focus-task.ft-overdue{border-color:rgba(139,46,46,0.5);}
+.focus-task.ft-soon{border-color:rgba(201,168,76,0.5);}
+.fc-top{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;}
+.fc-body{flex:1;min-width:0;}
+.fc-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.fc-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+.fc-note-area{display:none;padding:0 14px 10px 50px;}
+.fc-note-area.open{display:block;}
+.fc-note-area textarea{width:100%;background:rgba(0,0,0,0.2);border:1px solid var(--line);border-radius:7px;color:var(--bone);font-family:'DM Mono',monospace;font-size:11px;padding:8px 12px;resize:vertical;min-height:60px;outline:none;transition:border-color .15s;}
+.fc-note-area textarea::placeholder{color:rgba(201,168,76,0.2);}
+.fc-note-area textarea:focus{border-color:var(--sand);}
+.ft-phase{font-size:10px;color:var(--dim);font-family:'Inter',sans-serif;}
+
+/* ── TIMELINE / GANTT ── */
+.gantt-wrap{overflow-x:auto;padding-bottom:8px;}
+.gantt-header{display:flex;margin-bottom:6px;padding-left:200px;}
+.gantt-month{flex:1;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);text-align:center;min-width:60px;}
+.gantt-row{display:flex;align-items:center;margin-bottom:5px;min-height:30px;}
+.gantt-label{width:200px;flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--bone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px;}
+.gantt-label .g-phase{font-size:9px;color:var(--dim);font-weight:400;}
+.gantt-track{flex:1;background:rgba(0,0,0,0.2);border-radius:4px;height:20px;position:relative;min-width:400px;}
+.gantt-bar{position:absolute;height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:9px;font-weight:700;letter-spacing:0.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter .15s;}
+.gantt-bar:hover{filter:brightness(1.2);}
+.gantt-bar.s-todo{background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--sand);}
+.gantt-bar.s-progress{background:rgba(201,168,76,0.28);border:1px solid rgba(201,168,76,0.5);color:var(--sand);}
+.gantt-bar.s-done{background:rgba(143,180,154,0.3);border:1px solid rgba(143,180,154,0.5);color:var(--green-lt);}
+.gantt-bar.s-blocked{background:rgba(139,46,46,0.3);border:1px solid rgba(139,46,46,0.5);color:#e07777;}
+.gantt-today{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--sand);opacity:0.7;border-radius:1px;pointer-events:none;}
+.gantt-sep{border-top:1px solid var(--line);margin:8px 0 8px 200px;}
+.gantt-phase-label{padding:8px 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);}
+
+/* ── ALL TASKS VIEW ── */
+.phase-block{margin-bottom:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;}
+.phase-hdr{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background .15s;}
+.phase-hdr:hover{background:rgba(201,168,76,0.05);}
+.phase-hdr.open{border-bottom-color:var(--line);}
+.phase-num{font-family:'Playfair Display',serif;font-size:26px;color:var(--sand);opacity:.5;min-width:28px;line-height:1;font-style:italic;}
+.phase-info{flex:1;}
+.phase-info h2{font-size:14px;font-weight:600;font-family:'Inter',sans-serif;}
+.phase-info p{font-size:11px;color:var(--dim);margin-top:1px;font-family:'Inter',sans-serif;}
+.phase-dates{font-family:'DM Mono',monospace;font-size:10px;color:var(--sand);text-align:right;}
+.phase-toggle{font-size:16px;color:var(--dim);transition:transform .2s;}
+.phase-hdr.open .phase-toggle{transform:rotate(90deg);}
+.task-list{display:none;}
+.task-list.open{display:block;}
+.task-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:9px 18px;border-bottom:1px solid var(--line);}
+.task-row:last-child{border-bottom:none;}
+.task-row:hover{background:rgba(201,168,76,0.03);}
+.t-btn{width:26px;height:26px;border-radius:7px;border:2px solid rgba(201,168,76,0.25);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;transition:all .15s;}
+.t-btn:hover{border-color:var(--sand);}
+.t-btn[data-s="progress"]{border-color:var(--sand);background:rgba(201,168,76,0.1);}
+.t-btn[data-s="done"]{border-color:var(--green-lt);background:rgba(143,180,154,0.15);}
+.t-btn[data-s="blocked"]{border-color:#c84444;background:rgba(200,68,68,0.1);}
+.t-body .t-name{font-size:13px;font-weight:600;color:var(--bone);font-family:'Inter',sans-serif;}
+.task-row[data-s="done"] .t-name{text-decoration:line-through;color:var(--dim);}
+.t-body .t-detail{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.5;font-family:'Inter',sans-serif;}
+.t-body .t-footer{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap;}
+.t-due-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;padding:2px 7px;border-radius:4px;border:1px solid;}
+.t-due-badge.overdue{color:#e07777;border-color:rgba(139,46,46,0.4);background:rgba(139,46,46,0.1);}
+.t-due-badge.soon{color:var(--sand);border-color:rgba(201,168,76,0.35);background:rgba(201,168,76,0.08);}
+.t-due-badge.ok{color:var(--green-lt);border-color:rgba(143,180,154,0.35);background:rgba(143,180,154,0.08);}
+.t-due-badge.done-badge{color:var(--dim);border-color:var(--line);background:transparent;}
+.t-dep-badge{font-size:9px;color:#8899e0;background:rgba(74,90,160,0.15);border:1px solid rgba(74,90,160,0.3);padding:2px 7px;border-radius:4px;}
+.t-tag{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid;}
+.tag-critical{color:#e07777;border-color:rgba(139,46,46,0.4);background:rgba(139,46,46,0.15);}
+.tag-legal{color:#8899e0;border-color:rgba(74,90,160,0.35);background:rgba(74,90,160,0.12);}
+.tag-finance{color:var(--green-lt);border-color:rgba(143,180,154,0.35);background:rgba(143,180,154,0.1);}
+.tag-ops{color:var(--sand);border-color:var(--line);background:rgba(201,168,76,0.06);}
+.tag-permit{color:#d4a040;border-color:rgba(180,120,40,0.35);background:rgba(180,120,40,0.1);}
+.t-note-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.note-btn{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:5px;cursor:pointer;white-space:nowrap;transition:all .12s;}
+.note-btn:hover{border-color:var(--sand);color:var(--sand);}
+.note-preview{font-size:9.5px;color:var(--sand);max-width:160px;text-align:right;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.note-area{display:none;grid-column:1/-1;padding:6px 0 2px 38px;}
+.note-area.open{display:block;}
+.note-area textarea{width:100%;background:rgba(0,0,0,0.2);border:1px solid var(--line);border-radius:7px;color:var(--bone);font-family:'DM Mono',monospace;font-size:11px;padding:8px 12px;resize:vertical;min-height:60px;outline:none;transition:border-color .15s;}
+.note-area textarea::placeholder{color:rgba(201,168,76,0.2);}
+.note-area textarea:focus{border-color:var(--sand);}
+.date-input{background:rgba(0,0,0,0.25);border:1px solid var(--line);color:var(--bone);font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;cursor:pointer;outline:none;transition:border-color .15s;}
+.date-input:focus{border-color:var(--sand);}
+.date-input::-webkit-calendar-picker-indicator{filter:invert(0.6);}
+
+/* ── PIN SCREEN ── */
+.pin-btn{width:64px;height:64px;border-radius:50%;border:1px solid rgba(201,168,76,0.25);background:rgba(201,168,76,0.06);color:var(--bone);font-family:'Inter',sans-serif;font-size:20px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;}
+.pin-btn:hover{background:rgba(201,168,76,0.15);border-color:var(--sand);}
+.pin-btn:active{background:rgba(201,168,76,0.25);}
+.pin-del{font-size:18px;color:var(--dim);}
+
+/* ── MANAGE / ADD TASK VIEW ── */
+.manage-wrap{max-width:640px;}
+.manage-wrap h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--bone);margin-bottom:4px;}
+.manage-wrap .manage-sub{font-size:11px;color:var(--dim);margin-bottom:24px;font-family:'Inter',sans-serif;}
+.form-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px 28px;margin-bottom:28px;}
+.form-card h3{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sand);margin-bottom:18px;font-family:'Inter',sans-serif;}
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;font-family:'Inter',sans-serif;}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:rgba(0,0,0,0.25);border:1px solid var(--line);border-radius:7px;color:var(--bone);font-family:'Inter',sans-serif;font-size:12px;padding:9px 12px;outline:none;transition:border-color .15s;}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--sand);}
+.form-row textarea{resize:vertical;min-height:72px;font-family:'Inter',sans-serif;}
+.form-row select option{background:#1B3A2D;color:var(--bone);}
+.form-row input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.6);}
+.tag-checkboxes{display:flex;gap:8px;flex-wrap:wrap;}
+.tag-cb{display:flex;align-items:center;gap:5px;cursor:pointer;}
+.tag-cb input{width:auto;cursor:pointer;}
+.tag-cb span{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid;}
+.form-submit{background:var(--sand);border:none;color:var(--earth);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:10px 24px;border-radius:7px;cursor:pointer;transition:opacity .15s;width:100%;margin-top:6px;}
+.form-submit:hover{opacity:0.88;}
+.custom-tasks-list{margin-top:4px;}
+.custom-task-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;}
+.custom-task-item .ct-body{flex:1;min-width:0;}
+.custom-task-item .ct-name{font-size:13px;font-weight:600;color:var(--bone);font-family:'Inter',sans-serif;}
+.custom-task-item .ct-meta{font-size:11px;color:var(--dim);margin-top:3px;font-family:'Inter',sans-serif;}
+.custom-task-item .ct-del{background:transparent;border:1px solid rgba(139,46,46,0.35);color:#c84444;font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.custom-task-item .ct-del:hover{background:rgba(139,46,46,0.15);}
+.ct-na-toggle{background:transparent;border:1px solid var(--line);color:var(--dim);font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.ct-na-toggle:hover{border-color:var(--sand);color:var(--sand);}
+.ct-na-toggle.na-active{border-color:rgba(143,180,154,0.5);color:var(--green-lt);background:rgba(143,180,154,0.08);}
+.empty-custom{text-align:center;padding:28px 20px;color:var(--dim);font-size:12px;font-family:'Inter',sans-serif;border:1px dashed var(--line);border-radius:10px;}
+
+/* footer */
+.foot{padding:20px 40px 24px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);margin-top:8px;flex-wrap:wrap;gap:10px;}
+.foot-left{font-size:10px;color:var(--dim);font-family:'Inter',sans-serif;}
+.foot-left span{color:var(--sand);}
+.version-badge{font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,168,76,0.6);letter-spacing:0.05em;}
+.foot-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.export-btn,.import-btn{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.export-btn:hover{border-color:var(--sand);color:var(--sand);}
+.import-btn{display:inline-flex;align-items:center;}
+.import-btn:hover{border-color:var(--green-lt);color:var(--green-lt);}
+.reset-btn{background:transparent;border:1px solid rgba(139,46,46,0.4);color:#c84444;font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:5px;cursor:pointer;transition:all .15s;}
+.reset-btn:hover{background:rgba(139,46,46,0.12);}
+
+@media(max-width:680px){
+  header,.tabs,.view,.prog-bar-wrap,.foot{padding-left:16px;padding-right:16px;}
+  .hd-title h1{font-size:24px;}
+  .gantt-label{width:130px;font-size:10px;}
+  .gantt-header{padding-left:130px;}
+  .gantt-sep{margin-left:130px;}
+}
+</style>
+</head>
+<body>
+
+<div id="pin-screen" style="display:flex;position:fixed;inset:0;background:var(--earth);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:0;">
+  <svg width="48" height="48" viewBox="0 0 56 56" fill="none" style="margin-bottom:16px;">
+    <circle cx="28" cy="28" r="26" fill="none" stroke="#C9A84C" stroke-width="1.5"/>
+    <circle cx="28" cy="28" r="3" fill="#C9A84C"/>
+    <circle cx="20" cy="20" r="2" fill="#C9A84C" opacity="0.55"/>
+    <circle cx="36" cy="20" r="2" fill="#C9A84C" opacity="0.55"/>
+    <circle cx="20" cy="36" r="2" fill="#C9A84C" opacity="0.55"/>
+    <circle cx="36" cy="36" r="2" fill="#C9A84C" opacity="0.55"/>
+    <circle cx="28" cy="16" r="1.5" fill="#C9A84C" opacity="0.4"/>
+    <circle cx="28" cy="40" r="1.5" fill="#C9A84C" opacity="0.4"/>
+  </svg>
+  <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--bone);margin-bottom:4px;">FORE <span style="color:var(--sand);font-style:italic;">&</span> <span style="color:var(--sand);">CO.</span></div>
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);margin-bottom:32px;">Project Tracker</div>
+  <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Enter PIN</div>
+  <!-- PIN dots display -->
+  <div style="display:flex;gap:14px;margin-bottom:24px;" id="pin-dots-wrap">
+    <div id="pd0" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(201,168,76,0.4);background:transparent;transition:background .15s;"></div>
+    <div id="pd1" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(201,168,76,0.4);background:transparent;transition:background .15s;"></div>
+    <div id="pd2" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(201,168,76,0.4);background:transparent;transition:background .15s;"></div>
+    <div id="pd3" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(201,168,76,0.4);background:transparent;transition:background .15s;"></div>
+  </div>
+  <input id="pin-input" type="password" maxlength="4" style="position:absolute;opacity:0;pointer-events:none;" autocomplete="off">
+  <!-- Keypad -->
+  <div style="display:grid;grid-template-columns:repeat(3,64px);gap:10px;">
+    <button onclick="pinKey('1')" class="pin-btn">1</button>
+    <button onclick="pinKey('2')" class="pin-btn">2</button>
+    <button onclick="pinKey('3')" class="pin-btn">3</button>
+    <button onclick="pinKey('4')" class="pin-btn">4</button>
+    <button onclick="pinKey('5')" class="pin-btn">5</button>
+    <button onclick="pinKey('6')" class="pin-btn">6</button>
+    <button onclick="pinKey('7')" class="pin-btn">7</button>
+    <button onclick="pinKey('8')" class="pin-btn">8</button>
+    <button onclick="pinKey('9')" class="pin-btn">9</button>
+    <div></div>
+    <button onclick="pinKey('0')" class="pin-btn">0</button>
+    <button onclick="pinKey('del')" class="pin-btn pin-del">⌫</button>
+  </div>
+  <div id="pin-error" style="margin-top:16px;font-family:'Inter',sans-serif;font-size:11px;color:#e07777;opacity:0;transition:opacity .2s;letter-spacing:0.08em;">Incorrect PIN</div>
+</div>
+
+<div id="app-wrap" style="display:none;">
+<header>
+  <div class="hd-title">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <!-- Golf ball mark from brand system -->
+      <svg width="38" height="38" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="26" fill="none" stroke="#C9A84C" stroke-width="1.5"/>
+        <circle cx="28" cy="28" r="3" fill="#C9A84C"/>
+        <circle cx="20" cy="20" r="2" fill="#C9A84C" opacity="0.55"/>
+        <circle cx="36" cy="20" r="2" fill="#C9A84C" opacity="0.55"/>
+        <circle cx="20" cy="36" r="2" fill="#C9A84C" opacity="0.55"/>
+        <circle cx="36" cy="36" r="2" fill="#C9A84C" opacity="0.55"/>
+        <circle cx="28" cy="16" r="1.5" fill="#C9A84C" opacity="0.4"/>
+        <circle cx="28" cy="40" r="1.5" fill="#C9A84C" opacity="0.4"/>
+        <circle cx="16" cy="28" r="1.5" fill="#C9A84C" opacity="0.4"/>
+        <circle cx="40" cy="28" r="1.5" fill="#C9A84C" opacity="0.4"/>
+      </svg>
+      <div>
+        <h1>FORE <span class="amp">&amp;</span> <span class="co">CO.</span></h1>
+        <p>Golf · Social · Simulator Bays &nbsp;·&nbsp; Waterdown Project Tracker</p>
+      </div>
+    </div>
+  </div>
+  <div class="hd-stats">
+    <div class="stat-box s-done"><div class="v" id="s-done">0</div><div class="l">Done</div></div>
+    <div class="vsep"></div>
+    <div class="stat-box s-prog"><div class="v" id="s-prog">0</div><div class="l">Active</div></div>
+    <div class="vsep"></div>
+    <div class="stat-box s-todo"><div class="v" id="s-todo">0</div><div class="l">To Do</div></div>
+    <div class="vsep"></div>
+    <div class="stat-box s-block"><div class="v" id="s-block">0</div><div class="l">Blocked</div></div>
+    <div class="vsep"></div>
+    <div class="deadline-box">
+      <div class="dl">Target Open</div>
+      <div class="dv">Nov 1, 2026</div>
+      <div class="dd" id="days-left"></div>
+    </div>
+  </div>
+</header>
+
+<div class="prog-bar-wrap">
+  <div class="prog-bar-labels"><span>Overall Completion</span><span id="pct-lbl">0%</span></div>
+  <div class="prog-bar-track"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('focus')">🎯 Focus</button>
+  <button class="tab-btn" onclick="showTab('timeline')">📅 Timeline</button>
+  <button class="tab-btn" onclick="showTab('all')">☰ All Tasks</button>
+  <button class="tab-btn" onclick="showTab('manage')">＋ Add Task</button>
+</div>
+
+<div class="view active" id="view-focus"></div>
+<div class="view" id="view-timeline"></div>
+<div class="view" id="view-all"></div>
+<div class="view" id="view-manage"></div>
+
+<div class="foot">
+  <div class="foot-left">Last updated: <span id="last-upd">—</span> &nbsp;·&nbsp; <span class="version-badge">fore-co-tracker · <span id="ver-display">v1.0</span></span></div>
+  <div class="foot-actions">
+    <span id="sync-status" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);margin-right:4px;">⟳ Loading…</span>
+    <button class="export-btn" onclick="exportData()" title="Save your progress to a JSON file before upgrading">⬇ Export</button>
+    <label class="import-btn" title="Load progress from a previously exported JSON file">
+      ⬆ Import
+      <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+    </label>
+    <button class="reset-btn" onclick="confirmReset()">↺ Reset</button>
+  </div>
+</div>
+</div><!-- /app-wrap -->
+
+<script>
+// ══════════════════════════════════════════════
+// DATA — Phases + Tasks with due dates & deps
+// ══════════════════════════════════════════════
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+const OPEN_DATE = new Date('2026-11-01');
+
+function d(s){ const x=new Date(s); x.setHours(0,0,0,0); return x; }
+
+// Tags
+const CR='critical',LG='legal',FN='finance',OP='ops',PM='permit';
+
+const PHASES = [
+{id:'p1',num:'01',title:'Lease Negotiation & LOI',sub:'Submit proposal → negotiate → execute lease',start:'2026-06-05',end:'2026-07-11',tasks:[
+  {id:'t1_1',name:'Draft & Submit Lease Proposal / LOI',detail:'Open at ~$23/SF net (below landlord $25 target). Bundle all conditions into the LOI — measurements, diligence window, TI allowance.',tags:[CR,LG],due:'2026-06-13',deps:[]},
+  {id:'t1_2',name:'Negotiate Free Rent Period',detail:'Target 3–4 months free rent for build-out. Frame as standard for TI-heavy fit-up of this type.',tags:[CR],due:'2026-06-20',deps:['t1_1']},
+  {id:'t1_3',name:'Negotiate TI Allowance',detail:'Push for $15–25/SF. Landlord quoting ~$16.70 TMI — use that to anchor a TI discussion. Electrical upgrade cost is leverage.',tags:[CR,FN],due:'2026-06-20',deps:['t1_1']},
+  {id:'t1_4',name:'Negotiate Rent Interruption & Abatement Clause',detail:'Rent stops or reduces if premises unavailable due to landlord repairs or casualty.',tags:[LG],due:'2026-06-25',deps:['t1_1']},
+  {id:'t1_5',name:'Confirm 5-Year Term + Renewal Option',detail:'5-year initial + 1×5 renewal at fixed or CPI-capped rent. Get renewal notice period (typically 6 months before expiry).',tags:[LG],due:'2026-06-25',deps:['t1_1']},
+  {id:'t1_6',name:'Negotiate Vacant Portion / Co-Tenancy Clause',detail:'If building vacancy exceeds a threshold, get a rent reduction or exit right. Confirm 5A availability and terms.',tags:[LG],due:'2026-06-25',deps:['t1_1']},
+  {id:'t1_7',name:'Confirm TMI Breakdown in Detail',detail:'Get itemized TMI: realty tax, insurance, CAM. All-in gross target < $42/SF.',tags:[FN],due:'2026-06-25',deps:['t1_1']},
+  {id:'t1_8',name:'Lawyer Review of Lease Draft',detail:'Ontario commercial lease lawyer reviews before execution. Budget $1,500–2,500.',tags:[LG,CR],due:'2026-07-04',deps:['t1_1','t2_2']},
+  {id:'t1_9',name:'Execute Lease — Take Possession',detail:'Sign lease. Confirm possession date aligns with contractor schedule and permit timeline.',tags:[CR],due:'2026-07-11',deps:['t1_8']},
+]},
+{id:'p2',num:'02',title:'Legal & Corporate Setup',sub:'Incorporate → shareholder agreement → accounts',start:'2026-06-05',end:'2026-07-04',tasks:[
+  {id:'t2_1',name:'NUANS Search & Name Availability',detail:'Confirm "Fore &amp; Co." is available provincially (NUANS report). Also verify "Fore and Co." variants.',tags:[LG],due:'2026-06-10',deps:[]},
+  {id:'t2_2',name:'Incorporate Business (Ontario — OBCA)',detail:'Incorporate Fore &amp; Co. Golf &amp; Social Inc. Online ~$360 + agent fee. Need this before bank account.',tags:[LG,CR],due:'2026-06-17',deps:['t2_1']},
+  {id:'t2_3',name:'Finalize Shareholder Agreement (60/40)',detail:'Complete all placeholder fields. Lawyer review required before execution. Cover drag-along, buyout mechanisms, deadlock.',tags:[LG,CR],due:'2026-06-28',deps:['t2_2']},
+  {id:'t2_4',name:'Open Business Bank Account',detail:'Requires Certificate of Incorporation + articles. Use CSBF-friendly bank (RBC, TD, BDC).',tags:[FN],due:'2026-07-04',deps:['t2_2']},
+  {id:'t2_5',name:'Register for HST (CRA)',detail:'Register once incorporated. Required before any revenue. Do not wait for the $30K threshold — register at launch.',tags:[LG,FN],due:'2026-07-04',deps:['t2_2']},
+  {id:'t2_6',name:'CIPO Trademark Search & Application',detail:'Search "Fore &amp; Co." under Nice Class 41 &amp; 43 at cipo.ca. Also search "Fore and Co." variants. File application ~$458/class if clear.',tags:[LG],due:'2026-07-04',deps:['t2_1']},
+]},
+{id:'p3',num:'03',title:'Financing & CSBF Loan',sub:'Quotes → bank meeting → loan approval',start:'2026-06-12',end:'2026-07-25',tasks:[
+  {id:'t3_1',name:'Update Financial Model for Final 6-Bay Config',detail:'Confirm all revenue, startup cost, and break-even inputs. Update TMI to actual quoted figure (~$16.70/SF).',tags:[FN,CR],due:'2026-06-20',deps:[]},
+  {id:'t3_2',name:'Get EyeXO Simulator Quote (6 Bays)',detail:'Formal Uneekor EyeXO commercial quote: 6 bays including screens, enclosures, PCs, E6 software. Required for CSBF.',tags:[FN,OP],due:'2026-06-20',deps:[]},
+  {id:'t3_3',name:'Get GC Build-Out Quotes (2–3 Bids)',detail:'Electrical upgrade, partitions, flooring, HVAC. Competing quotes. Required for CSBF leasehold portion.',tags:[FN,OP],due:'2026-06-27',deps:['t5_1']},
+  {id:'t3_4',name:'Preliminary Bank Meeting (CSBF)',detail:'Approach RBC, TD, or BDC. Bring business plan + financial model. Confirm CSBF eligibility and required docs.',tags:[FN],due:'2026-06-27',deps:['t2_4','t3_1']},
+  {id:'t3_5',name:'Finalize Equity Structure & Capital Contributions',detail:'Confirm each shareholder injection per 60/40 agreement. Cash must be available to deploy.',tags:[FN,LG],due:'2026-07-04',deps:['t2_3']},
+  {id:'t3_6',name:'Submit CSBF Loan Application',detail:'Attach: business plan, financial model, quotes, lease/LOI, incorporation docs, personal financial statements.',tags:[FN,CR],due:'2026-07-11',deps:['t1_9','t3_2','t3_3','t3_4','t2_2']},
+  {id:'t3_7',name:'Financing Approved — Funds Committed',detail:'MILESTONE: Loan approved before placing simulator order. Typical approval: 1–3 weeks after application.',tags:[CR],due:'2026-07-25',deps:['t3_6']},
+]},
+{id:'p4',num:'04',title:'Site Due Diligence & Measurements',sub:'Full field survey → confirm layout → finalize drawings',start:'2026-06-05',end:'2026-06-27',tasks:[
+  {id:'t5_1',name:'Full Measurement Survey of 5B-C',detail:'Field-verify all ceiling heights (4 corners + centre + under beams). Measure columns, sprinkler drops, rough-ins.',tags:[OP,CR],due:'2026-06-13',deps:[]},
+  {id:'t5_2',name:'Confirm Electrical Panel Capacity',detail:'Verify available amperage vs. load (each EyeXO bay needs ~20A dedicated). Confirm upgrade path and cost with electrician.',tags:[OP,CR],due:'2026-06-13',deps:['t5_1']},
+  {id:'t5_3',name:'Assess Mystery Wall in Back Storage Area',detail:'Wall visible on site but absent from floor plan. Structural or partition? Resolve before finalizing layout.',tags:[OP],due:'2026-06-13',deps:['t5_1']},
+  {id:'t5_4',name:'Confirm 5A Unit Status & Terms',detail:'Verify whether 5A is included in lease, on what terms, and when it becomes available for lobby/washrooms.',tags:[OP,CR],due:'2026-06-20',deps:[]},
+  {id:'t5_5',name:'Confirm HVAC Capacity for 6 Bays',detail:'6 bays add ~9–12 kW heat load (PCs + projectors). Confirm existing system is sufficient or upgradeable.',tags:[OP],due:'2026-06-20',deps:['t5_1']},
+  {id:'t5_6',name:'Finalize 6-Bay Layout Drawing',detail:'Translate field measurements into final bay layout with dimensions. Required for permit drawings and GC quotes.',tags:[OP,CR],due:'2026-06-27',deps:['t5_1','t5_3']},
+]},
+{id:'p5',num:'05',title:'Permitting & Zoning',sub:'Confirm use → drawings → permit application → approval',start:'2026-06-20',end:'2026-08-08',tasks:[
+  {id:'t4_1',name:'Confirm Zoning Permits Indoor Recreation Use',detail:'Verify Waterdown / City of Hamilton zoning for simulator facility. Check Hamilton Municipal Code zoning map online.',tags:[PM,CR],due:'2026-06-20',deps:[]},
+  {id:'t4_2',name:'Determine if Change of Use Permit Required',detail:'Previous use likely retail. Simulator = assembly/recreational. May trigger OBC occupancy class change (Group A2).',tags:[PM],due:'2026-06-27',deps:['t4_1']},
+  {id:'t4_3',name:'Engage Architect / Permit Drawings',detail:'Hire architect or designer for permit drawings: bay partitions, electrical, accessibility (AODA), exits.',tags:[PM,OP],due:'2026-07-04',deps:['t5_6','t4_2']},
+  {id:'t4_4',name:'Submit Building Permit Application',detail:'Submit to City of Hamilton. Allow 4–6 weeks for review. Delays here push everything downstream — do not wait.',tags:[PM,CR],due:'2026-07-11',deps:['t4_3','t1_9']},
+  {id:'t4_5',name:'Building Permit Issued',detail:'MILESTONE. Target permit in hand by early August. Contractor cannot legally start structural work without it.',tags:[PM,CR],due:'2026-08-08',deps:['t4_4']},
+]},
+{id:'p6',num:'06',title:'Procurement & Vendor Contracts',sub:'Lock all equipment and service suppliers',start:'2026-07-11',end:'2026-08-01',tasks:[
+  {id:'t6_1',name:'Place Simulator Order (6 × EyeXO)',detail:'⚠ CRITICAL PATH: EyeXO lead time ~8–10 weeks. Must order by July 25 to receive by late September.',tags:[OP,CR],due:'2026-07-25',deps:['t3_7']},
+  {id:'t6_2',name:'Confirm Simulator Software Licensing (E6/GSPro)',detail:'E6 Connect or GSPro. Include multi-bay networked play. Confirm licensing is included in EyeXO quote.',tags:[OP],due:'2026-07-25',deps:['t3_7']},
+  {id:'t6_3',name:'Select & Configure Booking Platform',detail:'ForeUP or Chronogolf. Set up bay tee-sheet, online payment, membership, access code delivery integration.',tags:[OP],due:'2026-08-01',deps:['t1_9']},
+  {id:'t6_4',name:'Access Control System per Bay',detail:'RemoteLock or equivalent. Integrate with booking platform for auto-unlock on booking confirmation.',tags:[OP],due:'2026-08-01',deps:['t6_3']},
+  {id:'t6_5',name:'Security Camera System',detail:'Verkada or equivalent. 12–16 cameras, cloud recording, mobile monitoring. Required for unattended operation.',tags:[OP],due:'2026-08-01',deps:['t1_9']},
+  {id:'t6_6',name:'Vending Machine Procurement',detail:'2 cashless combo units. Purchased vs. revenue-share decision. Cantaloupe or Nayax cashless payment.',tags:[OP],due:'2026-08-01',deps:['t1_9']},
+  {id:'t6_7',name:'Award GC Contract & Mobilize',detail:'Select GC from competing bids. Execute contract. Schedule mobilization date tied to permit issuance.',tags:[OP,CR],due:'2026-08-01',deps:['t3_3','t4_5']},
+]},
+{id:'p7',num:'07',title:'Build-Out & Installation',sub:'GC builds space → simulators installed → systems commissioned',start:'2026-08-08',end:'2026-10-03',tasks:[
+  {id:'t7_1',name:'Contractor Mobilization & Demo',detail:'GC takes possession and begins framing of bay partitions, electrical rough-in.',tags:[OP],due:'2026-08-15',deps:['t4_5','t6_7']},
+  {id:'t7_2',name:'Electrical Upgrade & Panel Work',detail:'Dedicated 20A circuits per bay + panel upgrade if required. Coordinate electrician with GC schedule.',tags:[OP,CR],due:'2026-08-29',deps:['t7_1']},
+  {id:'t7_3',name:'Bay Framing, Impact Screens & Flooring',detail:'Partition walls, impact screen install, turf/flooring in each bay. GC scope.',tags:[OP],due:'2026-09-12',deps:['t7_1']},
+  {id:'t7_4',name:'Simulator Hardware Delivery & Installation',detail:'Mount EyeXO units, projectors, PC stations. Run data and power to each bay. Requires bays to be framed.',tags:[OP,CR],due:'2026-09-26',deps:['t7_3','t6_1']},
+  {id:'t7_5',name:'Access Control & Camera Installation',detail:'Mount keypads at each bay + all cameras. Test lock-to-booking integration end-to-end.',tags:[OP],due:'2026-09-26',deps:['t7_1','t6_4','t6_5']},
+  {id:'t7_6',name:'Lobby / 5A Fit-Out',detail:'Seating, signage, vending placement, washroom confirmation in 5A unit.',tags:[OP],due:'2026-09-26',deps:['t7_1']},
+  {id:'t7_7',name:'Signage Installation',detail:'Exterior illuminated sign + interior wayfinding. Confirm Hamilton sign permit requirements.',tags:[OP,PM],due:'2026-09-26',deps:['t7_1']},
+  {id:'t7_8',name:'Full Systems Commissioning & Testing',detail:'Test every bay end-to-end: book → unlock → play → re-lock. Camera feeds live. Vending operational.',tags:[OP,CR],due:'2026-10-03',deps:['t7_4','t7_5']},
+  {id:'t7_9',name:'City Final Inspection & Occupancy Permit',detail:'Final building inspection. Occupancy Permit required before opening to the public.',tags:[PM,CR],due:'2026-10-03',deps:['t7_2','t7_3']},
+]},
+{id:'p8',num:'08',title:'Pre-Launch & Marketing',sub:'Brand → socials → soft launch → grand opening',start:'2026-08-01',end:'2026-11-01',tasks:[
+  {id:'t8_1',name:'Register Domain & Secure Social Handles',detail:'foreandco.ca + foreandco.com + @ForeAndCoGolf on Instagram/TikTok/Facebook. Do this now — independent of final legal name.',tags:[OP],due:'2026-06-20',deps:[]},
+  {id:'t8_2',name:'Launch Teaser Website & Waitlist',detail:'Simple landing page: "Coming Fall 2026 to Waterdown." Email capture for founding members.',tags:[OP],due:'2026-08-01',deps:['t2_2']},
+  {id:'t8_3',name:'Founding Member Offer Campaign',detail:'30–50 founding members at locked-in rate. Launch 8 weeks before opening. Outreach to local golf groups.',tags:[OP],due:'2026-09-05',deps:['t8_2']},
+  {id:'t8_4',name:'Launch Full Website & Booking Flow',detail:'Live booking calendar + payment + access code delivery. Test full customer journey before soft launch.',tags:[OP,CR],due:'2026-10-03',deps:['t6_3','t7_8']},
+  {id:'t8_5',name:'Soft Launch — Invited Testing',detail:'Friends, family, founding members. Test booking → access → play end-to-end. Catch issues before public launch.',tags:[OP,CR],due:'2026-10-17',deps:['t7_8','t7_9','t8_4']},
+  {id:'t8_6',name:'Grand Opening',detail:'Open house, demo sessions, local press/golf media. Target: November 1, 2026.',tags:[CR],due:'2026-11-01',deps:['t8_5']},
+]},
+];
+
+// ══════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════
+const VERSION   = 'v1.2';
+const PIN_HASH  = '1855'; // plain compare — obfuscated enough for public URL
+const BIN_ID    = '6a238c26f5f4af5e29c0f351';
+const API_KEY   = '$2a$10$uSQZVxk0MUvKA7z2VYJjdupUBaEfcK7tkqWVyV4YX7eHa85JpYH8';
+const BIN_URL   = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const SK        = 'fore_co_tracker_v1'; // local cache key
+
+// ── PIN LOCK ──────────────────────────────────
+function checkPin(){
+  const sessionOk = sessionStorage.getItem('fc_unlocked')==='1';
+  if(sessionOk){ document.getElementById('pin-screen').style.display='none'; initApp(); return; }
+  document.getElementById('pin-screen').style.display='flex';
+  document.getElementById('app-wrap').style.display='none';
+}
+function pinKey(val){
+  const inp = document.getElementById('pin-input');
+  if(val==='del'){ inp.value=inp.value.slice(0,-1); }
+  else if(inp.value.length<4){ inp.value+=val; }
+  // update dots
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('pd'+i);
+    if(dot) dot.style.background = i<inp.value.length ? '#C9A84C' : 'transparent';
+  }
+  if(inp.value.length===4){
+    if(inp.value===PIN_HASH){
+      sessionStorage.setItem('fc_unlocked','1');
+      document.getElementById('pin-screen').style.display='none';
+      document.getElementById('app-wrap').style.display='block';
+      initApp();
+    } else {
+      document.getElementById('pin-error').style.opacity='1';
+      setTimeout(()=>{
+        inp.value='';
+        for(let i=0;i<4;i++){ const d=document.getElementById('pd'+i); if(d) d.style.background='transparent'; }
+        document.getElementById('pin-error').style.opacity='0';
+      },900);
+    }
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('pin-screen').style.display==='none') return;
+  if(e.key>='0'&&e.key<='9') pinKey(e.key);
+  else if(e.key==='Backspace') pinKey('del');
+});
+
+// ── CLOUD STATE ───────────────────────────────
+let state = blankState();
+let saveTimer = null;
+
+function blankState(){
+  return {tasks:{},notes:{},customDue:{},expanded:{},customTasks:[],naTasks:{},lastUpdated:null};
+}
+function mergeDefaults(s){
+  PHASES.forEach(p=>{
+    p.tasks.forEach(t=>{
+      if(!s.tasks[t.id]) s.tasks[t.id]='todo';
+      if(s.notes[t.id]===undefined) s.notes[t.id]='';
+    });
+    if(s.expanded[p.id]===undefined) s.expanded[p.id]=false;
+  });
+  (s.customTasks||[]).forEach(t=>{
+    if(!s.tasks[t.id]) s.tasks[t.id]='todo';
+    if(s.notes[t.id]===undefined) s.notes[t.id]='';
+  });
+  return s;
+}
+
+async function loadFromCloud(){
+  showSyncStatus('loading');
+  try {
+    const r = await fetch(BIN_URL+'/latest', {
+      headers:{'X-Master-Key':API_KEY,'X-Bin-Meta':false}
+    });
+    if(!r.ok) throw new Error('fetch failed');
+    const data = await r.json();
+    state = mergeDefaults({...blankState(),...data});
+    localStorage.setItem(SK, JSON.stringify(state)); // local cache
+    showSyncStatus('ok');
+  } catch(e){
+    // fall back to local cache
+    const raw = localStorage.getItem(SK);
+    state = mergeDefaults(raw ? {...blankState(),...JSON.parse(raw)} : blankState());
+    showSyncStatus('offline');
+  }
+}
+
+function saveState(){
+  state.lastUpdated = new Date().toISOString();
+  localStorage.setItem(SK, JSON.stringify(state)); // immediate local save
+  renderLastUpdated();
+  // Debounce cloud saves — wait 800ms after last change
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushToCloud, 800);
+}
+
+async function pushToCloud(){
+  showSyncStatus('saving');
+  try {
+    const r = await fetch(BIN_URL, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body: JSON.stringify(state)
+    });
+    if(!r.ok) throw new Error('save failed');
+    showSyncStatus('ok');
+  } catch(e){
+    showSyncStatus('offline');
+  }
+}
+
+function showSyncStatus(status){
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  const map = {
+    loading: {text:'⟳ Loading…',   color:'var(--dim)'},
+    saving:  {text:'⟳ Saving…',    color:'var(--sand)'},
+    ok:      {text:'✓ Synced',      color:'var(--green-lt)'},
+    offline: {text:'⚠ Offline — local only', color:'#e07777'},
+  };
+  const m = map[status]||map.ok;
+  el.textContent = m.text;
+  el.style.color = m.color;
+}
+
+// defaults for custom tasks
+function applyCustomDefaults(){
+  (state.customTasks||[]).forEach(t=>{
+    if(!state.tasks[t.id]) state.tasks[t.id]='todo';
+    if(!state.notes[t.id]) state.notes[t.id]='';
+  });
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+const CYCLE=['todo','progress','done','blocked'];
+const ICON={todo:'',progress:'◑',done:'✓',blocked:'✕'};
+const fmt=dt=>{if(!dt)return'';const d=new Date(dt);d.setHours(0,0,0,0);return d.toLocaleDateString('en-CA',{month:'short',day:'numeric'});};
+const fmtFull=dt=>{if(!dt)return'';const d=new Date(dt);d.setHours(0,0,0,0);return d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});};
+function daysUntil(dueStr){
+  if(!dueStr)return null;
+  const x=new Date(dueStr); x.setHours(0,0,0,0);
+  return Math.ceil((x-TODAY)/(86400000));
+}
+function dueClass(dueStr,status){
+  if(status==='done') return 'done-badge';
+  const d=daysUntil(dueStr);
+  if(d===null)return'ok';
+  if(d<0)return'overdue';
+  if(d<=7)return'soon';
+  return'ok';
+}
+function dueLbl(dueStr,status){
+  if(status==='done')return'✓ Done';
+  const d=daysUntil(dueStr);
+  if(d===null)return'';
+  if(d<0)return`${Math.abs(d)}d overdue`;
+  if(d===0)return'Due today';
+  if(d<=7)return`${d}d left`;
+  return'Due '+fmt(dueStr);
+}
+function getEffDue(t){ return state.customDue[t.id]||t.due; }
+
+// Check if all deps are done
+function depsBlocked(task){
+  if(!task.deps||!task.deps.length) return false;
+  return task.deps.some(d=>state.tasks[d]!=='done');
+}
+function depNames(task){
+  if(!task.deps||!task.deps.length) return [];
+  return task.deps.filter(d=>state.tasks[d]!=='done').map(d=>{
+    for(const p of PHASES){ const t=p.tasks.find(x=>x.id===d); if(t) return t.name.slice(0,30)+'…'; }
+    return d;
+  });
+}
+
+function tagHTML(tags){ return(tags||[]).map(t=>`<span class="t-tag tag-${t}">${t}</span>`).join(''); }
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+function updateStats(){
+  let done=0,prog=0,todo=0,blk=0,total=0;
+  const allTasks = [...PHASES.flatMap(p=>p.tasks), ...(state.customTasks||[])];
+  allTasks.forEach(t=>{
+    if(state.naTasks&&state.naTasks[t.id]) return; // skip N/A
+    total++;
+    const s=state.tasks[t.id]||'todo';
+    if(s==='done')done++; else if(s==='progress')prog++; else if(s==='blocked')blk++; else todo++;
+  });
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-prog').textContent=prog;
+  document.getElementById('s-todo').textContent=todo;
+  document.getElementById('s-block').textContent=blk;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('pct-lbl').textContent=pct+'%';
+}
+function renderLastUpdated(){
+  const el=document.getElementById('last-upd');
+  if(!state.lastUpdated){el.textContent='—';return;}
+  const d=new Date(state.lastUpdated);
+  el.textContent=d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+}
+function renderDaysLeft(){
+  const diff=Math.ceil((OPEN_DATE-TODAY)/86400000);
+  document.getElementById('days-left').textContent=diff>0?diff+' days left':'Open!';
+}
+
+// ══════════════════════════════════════════════
+// CYCLE STATUS (works for both focus + all views)
+// ══════════════════════════════════════════════
+function cycleStatus(taskId){
+  const cur=state.tasks[taskId]||'todo';
+  state.tasks[taskId]=CYCLE[(CYCLE.indexOf(cur)+1)%CYCLE.length];
+  saveState();
+  updateStats();
+  refreshActiveView();
+}
+function saveNote(taskId,val){ state.notes[taskId]=val; saveState(); }
+function saveCustomDue(taskId,val){ state.customDue[taskId]=val||null; saveState(); refreshActiveView(); }
+function toggleFocusNote(taskId){
+  const area=document.getElementById(`fc-na-${taskId}`);
+  if(area){ area.classList.toggle('open'); if(area.classList.contains('open')) area.querySelector('textarea').focus(); }
+}
+function updateFocusNotePreview(taskId,val){
+  const el=document.getElementById(`fc-np-${taskId}`);
+  if(!el)return;
+  if(val){ el.textContent=val.slice(0,40)+(val.length>40?'…':''); el.style.display=''; }
+  else { el.textContent=''; el.style.display='none'; }
+}
+
+// ══════════════════════════════════════════════
+// FOCUS VIEW
+// ══════════════════════════════════════════════
+function renderFocus(){
+  const now=[],thisWeek=[],upcoming=[];
+
+  // Build a phaseMap so custom tasks can look up their phase
+  const phaseMap={};
+  PHASES.forEach(p=>{ phaseMap[p.id]=p; p.tasks.forEach(t=>{ t._phaseId=p.id; }); });
+  (state.customTasks||[]).forEach(t=>{ t._phaseId=t.phaseId; });
+
+  const allTasks = [...PHASES.flatMap(p=>p.tasks.map(t=>({t,p}))),
+                    ...(state.customTasks||[]).map(t=>({t, p:phaseMap[t.phaseId]||{num:'?',title:'Custom',id:t.phaseId}}))];
+
+  allTasks.forEach(({t,p})=>{
+    if(state.naTasks&&state.naTasks[t.id]) return; // skip N/A
+    const s=state.tasks[t.id]||'todo';
+    if(s==='done')return;
+    const due=getEffDue(t);
+    const d=daysUntil(due);
+    const item={t,p,s,due,d};
+    if(s==='blocked'||(d!==null&&d<0)) now.push(item);
+    else if(s==='progress') now.push(item);
+    else if(d!==null&&d<=7) thisWeek.push(item);
+    else if(d!==null&&d<=21) upcoming.push(item);
+  });
+  // sort
+  const sortByDue=(a,b)=>{ const da=daysUntil(a.due),db=daysUntil(b.due); return (da??999)-(db??999); };
+  now.sort(sortByDue); thisWeek.sort(sortByDue); upcoming.sort(sortByDue);
+
+  function taskCard(item){
+    const {t,p,s,due,blocked}=item;
+    const dc=dueClass(due,s);
+    const dl=dueLbl(due,s);
+    const deps=depNames(t);
+    const note=state.notes[t.id]||'';
+    const customDue=state.customDue[t.id]||'';
+    const borderCls=dc==='overdue'?' ft-overdue':dc==='soon'?' ft-soon':'';
+    return `<div class="focus-task${borderCls}" id="fc-${t.id}" data-s="${s}">
+      <div class="fc-top">
+        <button class="t-btn" data-s="${s}" onclick="event.stopPropagation();cycleStatus('${t.id}')">${ICON[s]}</button>
+        <div class="fc-body">
+          <div class="fc-name-row">
+            <div class="t-name">${t.name}</div>
+            <div class="fc-actions">
+              ${note?`<div class="note-preview" id="fc-np-${t.id}">${note.slice(0,40)}${note.length>40?'…':''}</div>`:`<div class="note-preview" id="fc-np-${t.id}" style="display:none"></div>`}
+              <button class="note-btn" onclick="event.stopPropagation();toggleFocusNote('${t.id}')">📝 Note</button>
+              <input class="date-input" type="date" value="${customDue||due||''}" onclick="event.stopPropagation()" onchange="event.stopPropagation();saveCustomDue('${t.id}',this.value)" title="Override due date">
+            </div>
+          </div>
+          <div class="t-detail">${t.detail}</div>
+          <div class="t-footer">
+            <span class="ft-phase">Phase ${p.num} · ${p.title}</span>
+            ${dl?`<span class="t-due-badge ${dc}">${dl}</span>`:''}
+            ${tagHTML(t.tags)}
+            ${deps.map(d=>`<span class="t-dep-badge">⏳ ${d}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="fc-note-area" id="fc-na-${t.id}">
+        <textarea placeholder="Add a note, update, or next step…" oninput="saveNote('${t.id}',this.value);updateFocusNotePreview('${t.id}',this.value)">${note}</textarea>
+      </div>
+    </div>`;
+  }
+
+  let html='';
+  if(now.length){
+    html+=`<div class="focus-section focus-now">
+      <div class="focus-section-title">🔴 Act Now — Overdue or In Progress (${now.length})</div>
+      ${now.map(taskCard).join('')}
+    </div>`;
+  }
+  if(thisWeek.length){
+    html+=`<div class="focus-section focus-week">
+      <div class="focus-section-title">🟡 Due This Week (${thisWeek.length})</div>
+      ${thisWeek.map(taskCard).join('')}
+    </div>`;
+  }
+  if(upcoming.length){
+    html+=`<div class="focus-section focus-next">
+      <div class="focus-section-title">⚪ Coming Up — Next 3 Weeks (${upcoming.length})</div>
+      ${upcoming.map(taskCard).join('')}
+    </div>`;
+  }
+  if(!html) html=`<div style="text-align:center;padding:60px 20px;color:var(--dim);font-size:14px;">🎉 Nothing urgent right now — check the All Tasks view.</div>`;
+  document.getElementById('view-focus').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+// TIMELINE / GANTT VIEW
+// ══════════════════════════════════════════════
+function renderTimeline(){
+  // Month columns: Jun–Nov 2026
+  const MONTHS=[
+    {label:'Jun',start:new Date('2026-06-01'),end:new Date('2026-06-30')},
+    {label:'Jul',start:new Date('2026-07-01'),end:new Date('2026-07-31')},
+    {label:'Aug',start:new Date('2026-08-01'),end:new Date('2026-08-31')},
+    {label:'Sep',start:new Date('2026-09-01'),end:new Date('2026-09-30')},
+    {label:'Oct',start:new Date('2026-10-01'),end:new Date('2026-10-31')},
+    {label:'Nov',start:new Date('2026-11-01'),end:new Date('2026-11-30')},
+  ];
+  const GANTT_START=new Date('2026-06-01'); GANTT_START.setHours(0,0,0,0);
+  const GANTT_END=new Date('2026-11-30');   GANTT_END.setHours(0,0,0,0);
+  const TOTAL_DAYS=(GANTT_END-GANTT_START)/86400000;
+  function pct(dt){ return Math.max(0,Math.min(100,(new Date(dt)-GANTT_START)/86400000/TOTAL_DAYS*100)); }
+
+  // Today line
+  const todayPct=pct(TODAY);
+
+  let html=`<div class="gantt-wrap">`;
+  // Header
+  html+=`<div class="gantt-header">`;
+  MONTHS.forEach(m=>{ html+=`<div class="gantt-month">${m.label}</div>`; });
+  html+=`</div>`;
+
+  PHASES.forEach(p=>{
+    html+=`<div class="gantt-phase-label">${p.num}. ${p.title}</div>`;
+    // Phase bar
+    const ps=pct(p.start), pe=pct(p.end);
+    const doneTasks=p.tasks.filter(t=>state.tasks[t.id]==='done').length;
+    const phasePct=p.tasks.length?Math.round(doneTasks/p.tasks.length*100):0;
+    const phaseStatus=phasePct===100?'s-done':p.tasks.some(t=>state.tasks[t.id]==='progress')?'s-progress':'s-todo';
+    html+=`<div class="gantt-row">
+      <div class="gantt-label" title="${p.title}"><span class="g-phase">Phase ${p.num}</span><br>${p.title}</div>
+      <div class="gantt-track">
+        <div class="gantt-today" style="left:${todayPct}%"></div>
+        <div class="gantt-bar ${phaseStatus}" style="left:${ps}%;width:${pe-ps}%">${phasePct}% complete</div>
+      </div>
+    </div>`;
+    // Task bars
+    p.tasks.forEach(t=>{
+      const due=getEffDue(t);
+      if(!due)return;
+      const ts=pct(p.start);
+      const te=pct(due);
+      const s=state.tasks[t.id]||'todo';
+      const statusCls='s-'+s;
+      const w=Math.max(te-ts,1);
+      html+=`<div class="gantt-row">
+        <div class="gantt-label" style="font-size:10px;color:var(--dim)" title="${t.name}">&nbsp;&nbsp;${t.name.slice(0,28)}${t.name.length>28?'…':''}</div>
+        <div class="gantt-track">
+          <div class="gantt-today" style="left:${todayPct}%"></div>
+          <div class="gantt-bar ${statusCls}" style="left:${ts}%;width:${w}%" onclick="cycleStatus('${t.id}')" title="${t.name} — Due ${fmt(due)}">${ICON[s]||''} ${fmt(due)}</div>
+        </div>
+      </div>`;
+    });
+    html+=`<div class="gantt-sep"></div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('view-timeline').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+// ALL TASKS VIEW
+// ══════════════════════════════════════════════
+function taskRowHTML(t, extraBtns=''){
+  const s=state.tasks[t.id]||'todo';
+  const due=getEffDue(t);
+  const dc=dueClass(due,s);
+  const dl=dueLbl(due,s);
+  const deps=depNames(t);
+  const note=state.notes[t.id]||'';
+  const customDue=state.customDue[t.id]||'';
+  const isNA=!!(state.naTasks&&state.naTasks[t.id]);
+  return `<div class="task-row" id="tr-${t.id}" data-s="${s}" style="${isNA?'opacity:0.38;':''}">
+    <button class="t-btn" data-s="${s}" onclick="cycleStatus('${t.id}')">${ICON[s]}</button>
+    <div class="t-body">
+      <div class="t-name">${t.name}${isNA?` <span style="font-size:9px;color:var(--green-lt);font-family:'Inter',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:6px;">N/A</span>`:''}</div>
+      <div class="t-detail">${t.detail||''}</div>
+      <div class="t-footer">
+        ${dl?`<span class="t-due-badge ${dc}">${dl}</span>`:''}
+        ${tagHTML(t.tags)}
+        ${deps.map(d=>`<span class="t-dep-badge">⏳ ${d}</span>`).join('')}
+      </div>
+    </div>
+    <div class="t-note-wrap">
+      ${note?`<div class="note-preview">${note.slice(0,36)}${note.length>36?'…':''}</div>`:''}
+      <button class="note-btn" onclick="toggleNote('${t.id}')">📝 Note</button>
+      <input class="date-input" type="date" value="${customDue||due||''}" onchange="saveCustomDue('${t.id}',this.value)" title="Override due date">
+      <button class="ct-na-toggle${isNA?' na-active':''}" onclick="toggleNA('${t.id}')" title="${isNA?'Mark as active':'Mark as N/A — not applicable'}">${isNA?'↩ Restore':'✕ N/A'}</button>
+      ${extraBtns}
+    </div>
+    <div class="note-area" id="na-${t.id}">
+      <textarea placeholder="Add a note, update, or next step…" oninput="saveNote('${t.id}',this.value)">${note}</textarea>
+    </div>
+  </div>`;
+}
+
+function renderAll(){
+  let html='';
+  PHASES.forEach(p=>{
+    const isOpen=!!state.expanded[p.id];
+    const phaseTasks = p.tasks;
+    const customForPhase = (state.customTasks||[]).filter(t=>t.phaseId===p.id);
+    const allPhaseTasks = [...phaseTasks, ...customForPhase];
+    const doneCt=allPhaseTasks.filter(t=>state.tasks[t.id]==='done'&&!(state.naTasks&&state.naTasks[t.id])).length;
+    const activeCt=allPhaseTasks.filter(t=>!(state.naTasks&&state.naTasks[t.id])).length;
+    const pStart=fmt(p.start), pEnd=fmt(p.end);
+    html+=`<div class="phase-block" id="pb-${p.id}">
+      <div class="phase-hdr ${isOpen?'open':''}" onclick="togglePhase('${p.id}')">
+        <div class="phase-num">${p.num}</div>
+        <div class="phase-info">
+          <h2>${p.title}</h2>
+          <p>${p.sub} &nbsp;·&nbsp; ${doneCt}/${activeCt} done</p>
+        </div>
+        <div class="phase-dates">${pStart} → ${pEnd}</div>
+        <div class="phase-toggle">›</div>
+      </div>
+      <div class="task-list ${isOpen?'open':''}" id="tl-${p.id}">`;
+    phaseTasks.forEach(t=>{ html+=taskRowHTML(t); });
+    customForPhase.forEach(t=>{
+      const delBtn=`<button class="ct-del" onclick="deleteCustomTask('${t.id}')" title="Delete this custom task">🗑 Delete</button>`;
+      html+=taskRowHTML(t, delBtn);
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('view-all').innerHTML=html;
+}
+
+function togglePhase(id){
+  state.expanded[id]=!state.expanded[id];
+  saveState();
+  const hdr=document.querySelector(`#pb-${id} .phase-hdr`);
+  const list=document.getElementById(`tl-${id}`);
+  if(hdr) hdr.classList.toggle('open',state.expanded[id]);
+  if(list) list.classList.toggle('open',state.expanded[id]);
+}
+function toggleNote(id){
+  const el=document.getElementById(`na-${id}`);
+  if(el) el.classList.toggle('open');
+}
+
+function toggleNA(taskId){
+  if(!state.naTasks) state.naTasks={};
+  state.naTasks[taskId] = !state.naTasks[taskId];
+  if(!state.naTasks[taskId]) delete state.naTasks[taskId];
+  saveState();
+  updateStats();
+  refreshActiveView();
+}
+
+function deleteCustomTask(taskId){
+  if(!confirm('Delete this custom task? This cannot be undone.')) return;
+  state.customTasks = (state.customTasks||[]).filter(t=>t.id!==taskId);
+  delete state.tasks[taskId];
+  delete state.notes[taskId];
+  delete state.customDue[taskId];
+  saveState();
+  updateStats();
+  refreshActiveView();
+}
+
+// ══════════════════════════════════════════════
+// MANAGE / ADD TASK VIEW
+// ══════════════════════════════════════════════
+function renderManage(){
+  const phaseOptions = PHASES.map(p=>`<option value="${p.id}">Phase ${p.num} — ${p.title}</option>`).join('');
+  const tagDefs = [
+    {id:'critical',label:'Critical'},
+    {id:'legal',   label:'Legal'},
+    {id:'finance', label:'Finance'},
+    {id:'ops',     label:'Ops'},
+    {id:'permit',  label:'Permit'},
+  ];
+  const tagCheckboxes = tagDefs.map(tg=>`
+    <label class="tag-cb">
+      <input type="checkbox" name="tags" value="${tg.id}">
+      <span class="t-tag tag-${tg.id}">${tg.label}</span>
+    </label>`).join('');
+
+  const customList = (state.customTasks||[]);
+  const customListHTML = customList.length===0
+    ? `<div class="empty-custom">No custom tasks yet. Add one above and it will appear here and in All Tasks & Focus views.</div>`
+    : customList.map(t=>{
+        const p=PHASES.find(p=>p.id===t.phaseId)||{num:'?',title:'Unknown'};
+        const s=state.tasks[t.id]||'todo';
+        const isNA=!!(state.naTasks&&state.naTasks[t.id]);
+        return `<div class="custom-task-item">
+          <div class="ct-body">
+            <div class="ct-name">${t.name}${isNA?' <span style="font-size:9px;color:var(--green-lt);margin-left:6px;">N/A</span>':''}</div>
+            <div class="ct-meta">Phase ${p.num} · ${p.title} ${t.due?'· Due '+fmt(t.due):''} · Status: ${s}</div>
+          </div>
+          <button class="ct-na-toggle${isNA?' na-active':''}" onclick="toggleNA('${t.id}');renderManage()">${isNA?'↩ Restore':'✕ N/A'}</button>
+          <button class="ct-del" onclick="deleteCustomTask('${t.id}');renderManage()">🗑 Delete</button>
+        </div>`;
+      }).join('');
+
+  document.getElementById('view-manage').innerHTML=`
+    <div class="manage-wrap">
+      <h2>Add a Task</h2>
+      <p class="manage-sub">Custom tasks appear in Focus, All Tasks, and Timeline views. They're saved with your progress and survive version upgrades.</p>
+      <div class="form-card">
+        <h3>New Task</h3>
+        <div class="form-row">
+          <label>Task Name *</label>
+          <input type="text" id="nt-name" placeholder="e.g. Get insurance quote">
+        </div>
+        <div class="form-row">
+          <label>Detail / Notes</label>
+          <textarea id="nt-detail" placeholder="What needs to happen, who to contact, key info…"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Phase *</label>
+          <select id="nt-phase">${phaseOptions}</select>
+        </div>
+        <div class="form-row">
+          <label>Due Date</label>
+          <input type="date" id="nt-due">
+        </div>
+        <div class="form-row">
+          <label>Tags</label>
+          <div class="tag-checkboxes">${tagCheckboxes}</div>
+        </div>
+        <button class="form-submit" onclick="addCustomTask()">＋ Add Task</button>
+      </div>
+
+      <div class="form-card">
+        <h3>Your Custom Tasks (${customList.length})</h3>
+        <div class="custom-tasks-list">${customListHTML}</div>
+      </div>
+    </div>`;
+}
+
+function addCustomTask(){
+  const name = document.getElementById('nt-name').value.trim();
+  const detail = document.getElementById('nt-detail').value.trim();
+  const phaseId = document.getElementById('nt-phase').value;
+  const due = document.getElementById('nt-due').value||null;
+  const tags = [...document.querySelectorAll('input[name="tags"]:checked')].map(cb=>cb.value);
+  if(!name){ alert('Task name is required.'); return; }
+  const id = 'ct_'+ Date.now();
+  const task = {id, phaseId, name, detail, due, tags, custom:true};
+  if(!state.customTasks) state.customTasks=[];
+  state.customTasks.push(task);
+  state.tasks[id]='todo';
+  state.notes[id]='';
+  saveState();
+  updateStats();
+  renderManage();
+  // Clear form
+  document.getElementById('nt-name').value='';
+  document.getElementById('nt-detail').value='';
+  document.getElementById('nt-due').value='';
+  document.querySelectorAll('input[name="tags"]:checked').forEach(cb=>cb.checked=false);
+}
+
+// ══════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════
+let activeTab='focus';
+function showTab(tab){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const map={'focus':'foc','timeline':'tim','all':'all','manage':'add'};
+    if(b.textContent.toLowerCase().includes(map[tab]||tab.slice(0,3))) b.classList.add('active');
+  });
+  activeTab=tab;
+  if(tab==='focus') renderFocus();
+  else if(tab==='timeline') renderTimeline();
+  else if(tab==='all') renderAll();
+  else if(tab==='manage') renderManage();
+}
+function refreshActiveView(){
+  if(activeTab==='focus') renderFocus();
+  else if(activeTab==='timeline') renderTimeline();
+  else if(activeTab==='all') renderAll();
+  else if(activeTab==='manage') renderManage();
+}
+
+function confirmReset(){
+  if(confirm('Reset ALL statuses, notes, and custom dates? This will clear cloud data too. Cannot be undone.')){
+    state = mergeDefaults(blankState());
+    saveState();
+    updateStats();
+    renderLastUpdated();
+    refreshActiveView();
+  }
+}
+
+// ══════════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════════
+function exportData(){
+  const payload = { version: VERSION, exportedAt: new Date().toISOString(), state };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `fore-co-tracker-backup-${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      // Accept both raw state objects and wrapped exports
+      const imported = payload.state || payload;
+      if(!imported.tasks) throw new Error('Invalid file');
+      state.tasks      = { ...state.tasks,      ...imported.tasks };
+      state.notes      = { ...state.notes,      ...imported.notes };
+      state.customDue  = { ...state.customDue,  ...imported.customDue };
+      state.expanded   = { ...state.expanded,   ...imported.expanded };
+      state.naTasks    = { ...state.naTasks,     ...(imported.naTasks||{}) };
+      if(imported.customTasks&&imported.customTasks.length){
+        const existingIds=new Set((state.customTasks||[]).map(t=>t.id));
+        imported.customTasks.forEach(t=>{ if(!existingIds.has(t.id)) state.customTasks.push(t); });
+      }
+      if(imported.lastUpdated) state.lastUpdated = imported.lastUpdated;
+      saveState();
+      updateStats();
+      renderLastUpdated();
+      refreshActiveView();
+      alert(`✓ Progress imported from ${payload.version || 'previous version'}. All your statuses and notes have been restored.`);
+    } catch(err) {
+      alert('Could not read that file. Make sure you\'re selecting a Fore & Co. tracker backup JSON.');
+    }
+    // Reset file input so same file can be re-imported if needed
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+async function initApp(){
+  document.getElementById('ver-display').textContent = VERSION;
+  await loadFromCloud();
+  applyCustomDefaults();
+  updateStats();
+  renderLastUpdated();
+  renderDaysLeft();
+  renderFocus();
+}
+checkPin();
+</script>
+</body>
+</html>
